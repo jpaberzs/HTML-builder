@@ -20,4 +20,3 @@ rl.on('line', (line) => {
 process.on('exit', () => {
   console.log('You are just exited from the console, have a nice day!');
 });
-process.on('SIGINT', () => process.exit());
