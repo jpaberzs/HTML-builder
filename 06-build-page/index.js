@@ -4,23 +4,34 @@ const path = require('path');
 const dist = 'project-dist';
 const distdir = path.join(__dirname, dist);
 
-function copyFile(fromFolder, toFolder, fromFile, toFile) {
-  fs.copyFile(
-    path.join(__dirname, fromFolder, fromFile),
-    path.join(__dirname, toFolder, toFile),
-    (err) => {
-      if (err) throw err;
-    },
-  );
-}
-
 // create dist folder
 fs.mkdir(distdir, { recursive: true }, (err) => {
   if (err) return console.log(err);
 });
 
-// setup index.html
-copyFile('', dist, 'template.html', 'index.html');
+
+const templateSource = fs.readFileSync(path.join(__dirname, 'template.html'), 'utf8', err => {
+  if(err) console.log(err);
+});
+
+fs.readdir(path.join(__dirname, '/components'), (err, files) => {
+  if (err) throw err;
+  let data = {};
+
+  files.forEach((file) => {
+    let name = path.parse(file).name;
+    data[name] = fs.readFileSync(path.join(__dirname, `/components/${name}.html`), 'utf8', err => {
+      if(err) console.log(err);
+    });
+  });
+  
+  const renderedTemplate = templateSource.replace(/\{\{(\w+)\}\}/g, (match, key) => data[key]);
+  
+  fs.writeFile(`${distdir}/index.html`, renderedTemplate, (err) => {
+    if (err) throw err;
+  });
+});
+
 
 // compile styles
 function readdir(file) {
@@ -35,7 +46,7 @@ function readdir(file) {
     });
     readerStream.on('end', () => {
       fs.appendFile(
-        path.join(__dirname, 'project-dist/main.css'),
+        path.join(__dirname, 'project-dist/style.css'),
         compiledStyles,
         (err) => {
           if (err) throw err;
@@ -51,9 +62,9 @@ function readdir(file) {
 fs.readdir(path.join(__dirname, '/styles/'), (err, files) => {
   if (err) throw err;
   // console.log(files);
-  fs.readFile(path.join(__dirname, `${dist}/main.css`), (err) => {
+  fs.readFile(path.join(__dirname, `${dist}/style.css`), (err) => {
     if (!err) {
-      fs.writeFile(path.join(__dirname, `${dist}/main.css`), '', () => {});
+      fs.writeFile(path.join(__dirname, `${dist}/style.css`), '', () => {});
     }
   });
   files.forEach((file) => {
@@ -62,10 +73,6 @@ fs.readdir(path.join(__dirname, '/styles/'), (err, files) => {
 });
 
 //copy dir
-fs.mkdir(path.join(__dirname, 'assets'), { recursive: true }, (err) => {
-  if (err) return console.log(err);
-  fs.readdir(path.join(__dirname, 'assets'), (err, files) => {
-    if (err) throw err;
-    console.log(files);
-  });
+fs.cp(path.join(__dirname, 'assets'), path.join(__dirname, `${dist}/assets`),  {recursive: true}, error => {
+  if (error) throw error;
 });
