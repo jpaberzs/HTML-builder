@@ -1,9 +1,9 @@
 const fs = require('fs');
 const path = require('path');
-let result = '';
 
 function readdir(file) {
   if (path.parse(file).ext == '.css') {
+    let result = '';
     const readerStream = fs.createReadStream(
       path.join(__dirname, `/styles/${file}`),
       'utf8',

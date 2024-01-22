@@ -2,25 +2,30 @@ const fs = require('fs');
 const path = require('path');
 
 const dist = 'project-dist';
+const distdir = path.join(__dirname, dist);
 
-let compiledStyles = '';
+function copyFile(fromFolder, toFolder, fromFile, toFile) {
+  fs.copyFile(
+    path.join(__dirname, fromFolder, fromFile),
+    path.join(__dirname, toFolder, toFile),
+    (err) => {
+      if (err) throw err;
+    },
+  );
+}
 
 // create dist folder
-fs.mkdir(path.join(__dirname, dist), { recursive: true }, (err) => {
+fs.mkdir(distdir, { recursive: true }, (err) => {
   if (err) return console.log(err);
 });
 
 // setup index.html
-fs.copyFile(
-  path.join(__dirname, '', 'template.html'),
-  path.join(__dirname, dist, 'index.html'),
-  (err) => {
-    if (err) throw err;
-  },
-);
+copyFile('', dist, 'template.html', 'index.html');
 
+// compile styles
 function readdir(file) {
   if (path.parse(file).ext == '.css') {
+    let compiledStyles = '';
     const readerStream = fs.createReadStream(
       path.join(__dirname, `/styles/${file}`),
       'utf8',
@@ -43,7 +48,6 @@ function readdir(file) {
   }
 }
 
-// compile styles
 fs.readdir(path.join(__dirname, '/styles/'), (err, files) => {
   if (err) throw err;
   // console.log(files);
@@ -54,5 +58,14 @@ fs.readdir(path.join(__dirname, '/styles/'), (err, files) => {
   });
   files.forEach((file) => {
     readdir(file);
+  });
+});
+
+//copy dir
+fs.mkdir(path.join(__dirname, 'assets'), { recursive: true }, (err) => {
+  if (err) return console.log(err);
+  fs.readdir(path.join(__dirname, 'assets'), (err, files) => {
+    if (err) throw err;
+    console.log(files);
   });
 });
