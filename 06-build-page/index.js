@@ -1,4 +1,5 @@
 const fs = require('fs');
+const fsPromise = require('fs').promises;
 const path = require('path');
 
 const dist = 'project-dist';
@@ -9,29 +10,48 @@ fs.mkdir(distdir, { recursive: true }, (err) => {
   if (err) return console.log(err);
 });
 
+async function createHTML() {
+  try {
+    const templateSource = await fsPromise.readFile(
+      path.join(__dirname, 'template.html'),
+      'utf8',
+    );
 
-const templateSource = fs.readFileSync(path.join(__dirname, 'template.html'), 'utf8', err => {
-  if(err) console.log(err);
-});
+    const files = await fsPromise.readdir(path.join(__dirname, '/components'));
 
-fs.readdir(path.join(__dirname, '/components'), (err, files) => {
-  if (err) throw err;
-  let data = {};
+    let data = {};
 
-  files.forEach((file) => {
-    let name = path.parse(file).name;
-    data[name] = fs.readFileSync(path.join(__dirname, `/components/${name}.html`), 'utf8', err => {
-      if(err) console.log(err);
-    });
-  });
-  
-  const renderedTemplate = templateSource.replace(/\{\{(\w+)\}\}/g, (match, key) => data[key]);
-  
-  fs.writeFile(`${distdir}/index.html`, renderedTemplate, (err) => {
-    if (err) throw err;
-  });
-});
+    await Promise.all(
+      files.map(async (file) => {
+        let name = path.parse(file).name;
+        data[name] = await fsPromise.readFile(
+          path.join(__dirname, `/components/${name}.html`),
+          'utf8',
+          (err) => {
+            if (err) console.log(err);
+          },
+        );
+      }),
+    );
 
+    const renderedTemplate = templateSource.replace(
+      /\{\{(\w+)\}\}/g,
+      (match, key) => data[key],
+    );
+
+    await fs.promises.writeFile(
+      `${distdir}/index.html`,
+      renderedTemplate,
+      (err) => {
+        if (err) throw err;
+      },
+    );
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+createHTML();
 
 // compile styles
 function readdir(file) {
@@ -73,6 +93,11 @@ fs.readdir(path.join(__dirname, '/styles/'), (err, files) => {
 });
 
 //copy dir
-fs.cp(path.join(__dirname, 'assets'), path.join(__dirname, `${dist}/assets`),  {recursive: true}, error => {
-  if (error) throw error;
-});
+fs.cp(
+  path.join(__dirname, 'assets'),
+  path.join(__dirname, `${dist}/assets`),
+  { recursive: true },
+  (error) => {
+    if (error) throw error;
+  },
+);

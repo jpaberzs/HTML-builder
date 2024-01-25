@@ -16,5 +16,15 @@ fs.mkdir(path.join(__dirname, 'files-copy'), { recursive: true }, (err) => {
   fs.readdir(path.join(__dirname, 'files'), (err, files) => {
     if (err) throw err;
     files.forEach((file) => copyfile(file));
+    fs.readdir(path.join(__dirname, 'files-copy'), (err, filesCopy) => {
+      if (err) throw err;
+      filesCopy.forEach((fileCopy) => {
+        if(files.indexOf(fileCopy) === -1) {
+          fs.unlink(path.join(__dirname, 'files-copy', fileCopy), (err) => {
+            if (err) throw err;
+          });
+        }
+      });
+    });
   });
 });
